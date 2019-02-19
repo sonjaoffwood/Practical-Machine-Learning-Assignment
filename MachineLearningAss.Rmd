@@ -1,0 +1,103 @@
+---
+title: "Machine Learning Assignment"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Instructions
+
+###Introduction
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+###Data
+
+The training data for this project are available here:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+
+## Getting and cleaning the data
+
+The following code downloads the data and cleans the data to only include predictors that will be useful in building the model.
+
+```{r data}
+setwd("C:/Users/sjd/Desktop/Personal/Data Science/Coursera/Practical Machine Learning/")
+data = read.csv("pml-training.csv")
+
+```
+
+When looking at the data it becomes apparent that there are a lot of variables containing a large number of missing values or NA values. The following removes all the variables which have more than 15% of NA or missing values.
+
+```{r data2}
+data2 = data[,colMeans(is.na(data))<0.15]
+data3 = data2[, colMeans(data2=="")<0.15]
+
+```
+
+The first column, being the index, as well as the timestamp information is superfluous and will consequently also be removed from the dataset before fitting a model.
+
+```{r data3}
+data4 = data3[,-grep("*timestamp*", colnames(data3))]
+data5 = data4[,-1]
+
+```
+
+The relevant libraries for running the model also need to be loaded.
+
+```{r data4}
+library(caret)
+library(randomForest)
+library(e1071)
+```
+
+
+## Cross validation
+
+The data will now be split into a training and test set, with a split of 60% in training and 40% in test. To ensure the work is reproduceable, the seed is first set.
+
+```{r data5}
+set.seed(1234)
+inTrain = createDataPartition(y=data5$classe, p=0.6, list=FALSE)
+training=data5[inTrain,]
+testing=data5[-inTrain,]
+
+```
+
+## Model fitting
+
+We are now in a position to fit our first model. I have chosen to fit a random forest model.
+
+```{r data6}
+
+model = train(classe~., method="rf",data= training)
+
+```
+
+To test the accuracy of the model, we test the predicted outcomes to the actual outcomes of our test set.
+
+```{r data7}
+pred=predict(model, testing)
+confusionMatrix(pred, testing$classe)
+
+```
+
+The model has an accuracy of 99.8% for the out of sample test set, indicating a very good fit.
+
+
+## Predicting 20 test cases
+
+In order to predict the 20 test cases, we first need to pull in the test data, then we have to apply the same transformations to the data as was done to the training data and lastly we have to predict the outcomes of the test data using the model we built on the training data. The following code performs these steps.
+
+```{r data8}
+testdata = read.csv("pml-testing.csv")
+testdata2 = testdata[,colMeans(is.na(data))<0.15]
+testdata3 = testdata2[, colMeans(data2=="")<0.15]
+testdata4 = testdata3[,-grep("*timestamp*", colnames(data3))]
+testdata5 = testdata4[,-1]
+predtest=predict(model, testdata5)
+```
+
